@@ -1,15 +1,19 @@
 package com.devmh.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-import java.time.LocalTime;
+import lombok.NoArgsConstructor;
+
+import java.time.Instant;
 
 @Data
-class Timetable {
-    private int recurrenceDays;
-    private LocalTime reviewTime;
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class Timetable {
 
-    public Timetable(int recurrenceDays, LocalTime reviewTime) {
-        this.recurrenceDays = recurrenceDays;
-        this.reviewTime = reviewTime;
-    }
+    private int recurrenceDays;
+    private Instant reviewTime;
+
 }

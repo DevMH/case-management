@@ -1,17 +1,22 @@
 package com.devmh.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-import java.time.LocalDate;
+import lombok.NoArgsConstructor;
+import org.springframework.data.elasticsearch.annotations.Document;
+
+import java.time.Instant;
 
 @Data
-class Finding {
-    private LocalDate startDate;
-    private LocalDate endDate;
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Document(indexName = "cases")
+public class Finding {
+
+    private Instant startDate;
+    private Instant endDate;
     private boolean sensitive;
 
-    public Finding(LocalDate startDate, LocalDate endDate, boolean sensitive) {
-        this.startDate = startDate;
-        this.endDate = endDate;
-        this.sensitive = sensitive;
-    }
 }

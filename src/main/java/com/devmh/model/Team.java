@@ -1,13 +1,18 @@
 package com.devmh.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.util.Set;
 
 @Data
-class Team {
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class Team {
+
     private Set<User> members;
 
-    public Team(Set<User> members) {
-        this.members = members;
-    }
 }

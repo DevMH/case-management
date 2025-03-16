@@ -1,13 +1,19 @@
 package com.devmh.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 import java.util.UUID;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Document(indexName = "organizations")
-class Organization {
+public class Organization {
     @Id
     private UUID id;
     private String name;
