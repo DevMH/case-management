@@ -14,13 +14,15 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
+import static org.assertj.core.api.BDDAssertions.then;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(SpringExtension.class)
@@ -34,28 +36,50 @@ class CaseControllerTest {
 
     @Test
     void testCreateCase() throws Exception {
-        Docket docket = new Docket("Test Docket");
-        Case newCase = new Case("Test Case", docket);
-        when(caseRepository.save(any(Case.class))).thenReturn(newCase);
-        String requestBody = mapper.writeValueAsString(newCase);
-        mockMvc.perform(post("/cases")
+        Case testCase = generateCase(CASE_NAME);
+        when(caseRepository.save(any(Case.class))).thenReturn(testCase);
+        String response = mockMvc.perform(post("/cases")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
+                        .content(mapper.writeValueAsString(testCase)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Test Case"));
+                .andReturn().getResponse().getContentAsString();
+
+        Case returnedCase = mapper.readValue(response, Case.class);
+        then(returnedCase.getName()).isEqualTo(CASE_NAME);
     }
 
     @Test
     void testGetAllCases() throws Exception {
-        Docket folder = new Docket("Test Docket");
-        Case case1 = new Case("Case 1", folder);
-        Case case2 = new Case("Case 2", folder);
-        when(caseRepository.findAll()).thenReturn(List.of(case1, case2));
+        List<Case> testCases = List.of(generateCase(CASE_NAME), generateCase(CASE_2_NAME));
+        when(caseRepository.findAll()).thenReturn(testCases);
 
-        mockMvc.perform(get("/cases")
+        String response = mockMvc.perform(get("/cases")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Case 1"))
-                .andExpect(jsonPath("$[1].name").value("Case 2"));
+                .andReturn().getResponse().getContentAsString();
+
+        List<Case> returnedCases = Arrays.asList(mapper.readValue(response, Case[].class));
+        assert returnedCases.size() == 2;
+        assert returnedCases.get(0).getName().equals(CASE_NAME);
+        assert returnedCases.get(1).getName().equals(CASE_2_NAME);
     }
+
+    private static Docket generateDocket() {
+        return Docket.builder()
+                .id(UUID.randomUUID())
+                .name(CaseControllerTest.DOCKET_NAME)
+                .build();
+    }
+
+    private static Case generateCase(String name) {
+        return Case.builder()
+                .id(UUID.randomUUID())
+                .name(name)
+                .docket(generateDocket())
+                .build();
+    }
+
+    private static final String DOCKET_NAME = "Test Docket";
+    private static final String CASE_NAME = "Case 1";
+    private static final String CASE_2_NAME = "Case 2";
 }
