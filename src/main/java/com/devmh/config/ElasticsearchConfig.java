@@ -17,7 +17,7 @@ class ElasticsearchConfig extends ElasticsearchConfiguration {
     public ClientConfiguration clientConfiguration() {
         return ClientConfiguration.builder()
                 .connectedTo(host + ":" + port)
-                // .usingSsl()
+                //.usingSsl()
                 .withBasicAuth(username, apiKey)
                 .build();
     }
