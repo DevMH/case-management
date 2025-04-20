@@ -1,0 +1,10 @@
+#dynamically injected URI from the extension:
+spring:
+  elasticsearch:
+    uris: ${spring.elasticsearch.uris:${SPRING_ELASTICSEARCH_URIS:http://localhost:9200}}
+#ElasticsearchTestExtension control the URI at runtime
+#Fallback to local ES if Testcontainers is not used
+#    username: elastic
+#    password: changeme
+#    connection-timeout: 10s
+#    socket-timeout: 10s
