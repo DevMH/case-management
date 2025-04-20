@@ -34,21 +34,31 @@ public class ElasticsearchTestExtension implements BeforeAllCallback, AfterEachC
             started = true;
             System.setProperty("spring.elasticsearch.uris", container.getHttpHostAddress());
         }
-
-        ApplicationContext appCtx = SpringExtension.getApplicationContext(context);
-        ElasticsearchOperations ops = appCtx.getBean(ElasticsearchOperations.class);
-
-        for (Class<?> domainClass : domainClasses) {
-            IndexOperations indexOps = ops.indexOps(domainClass);
-            if (!indexOps.exists()) {
-                indexOps.create();
-                indexOps.putMapping();
-            }
-        }
+        clearIndices(context);
     }
 
     @Override
     public void afterEach(ExtensionContext context) {
+        clearIndices(context);
+    }
+
+    private void clearIndices(ExtensionContext context) {
+        ApplicationContext appCtx = SpringExtension.getApplicationContext(context);
+        ElasticsearchOperations ops = appCtx.getBean(ElasticsearchOperations.class);
+        for (Class<?> domainClass : domainClasses) {
+            IndexOperations indexOps = ops.indexOps(domainClass);
+            if(indexOps.exists()) {
+                indexOps.delete();
+            }
+            indexOps.create();
+            indexOps.putMapping();
+        }
+    }
+
+    /*
+    @Override
+    public void afterAll(ExtensionContext context) {
+        this.
         ApplicationContext appCtx = SpringExtension.getApplicationContext(context);
         ElasticsearchOperations ops = appCtx.getBean(ElasticsearchOperations.class);
 
@@ -59,6 +69,7 @@ public class ElasticsearchTestExtension implements BeforeAllCallback, AfterEachC
             indexOps.putMapping();
         }
     }
+    */
 
     public static String getElasticsearchUri() {
         return container.getHttpHostAddress();

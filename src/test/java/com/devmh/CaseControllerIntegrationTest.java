@@ -14,6 +14,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Comparator;
 import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -34,6 +35,8 @@ class CaseControllerIntegrationTest {
     @Autowired private CaseRepository caseRepository;
     @Autowired private ObjectMapper objectMapper;
     // @Autowired private UserMapper userMapper;
+
+    private static final Comparator<UUID> ALWAYS_EQUALS_UUID = (u1, u2) -> 0;
 
     @Test
     void testUserPersistenceAndRetrieval() throws Exception {
