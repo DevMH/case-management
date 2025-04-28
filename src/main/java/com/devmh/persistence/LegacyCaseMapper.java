@@ -12,6 +12,6 @@ public interface LegacyCaseMapper {
     @Mapping(target = "id", expression = "java(java.util.UUID.randomUUID())")
     Case toElasticsearchCase(LegacyCase legacy);
 
-    LegacyCaseMapper INSTANCE = Mappers.getMapper(LegacyCaseMapper.class);
+    //LegacyCaseMapper INSTANCE = Mappers.getMapper(LegacyCaseMapper.class);
 
 }

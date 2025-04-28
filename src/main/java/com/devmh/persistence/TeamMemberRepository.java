@@ -7,6 +7,6 @@ import java.util.List;
 import java.util.UUID;
 
 public interface TeamMemberRepository extends Neo4jRepository<TeamMember, UUID> {
+
     List<TeamMember> findByNameContainingIgnoreCase(String name);
-    // List<TeamMemberSummary> findByRole(String role);
 }

@@ -21,6 +21,7 @@ import com.devmh.model.TeamMember;
 import com.devmh.persistence.CaseRepository;
 import com.devmh.persistence.TeamMemberRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+//@PreAuthorize("hasRole('ADMIN')")
 public class PersistenceService {
 
     private final CaseRepository caseRepository;

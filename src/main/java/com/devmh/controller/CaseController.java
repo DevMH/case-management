@@ -5,7 +5,10 @@ import com.devmh.model.Case;
 import com.devmh.model.Docket;
 import com.devmh.model.Location;
 import com.devmh.persistence.CaseRepository;
+import com.devmh.service.PersistenceService;
 import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -15,16 +18,27 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/cases")
-class CaseController {
+public class CaseController {
 
     private final CaseRepository caseRepository;
+    private final PersistenceService persistenceService;
+
     private final Random rand  = new Random();
     {
         rand.setSeed(System.currentTimeMillis());
     }
 
-    public CaseController(CaseRepository caseRepository) {
+    public CaseController(CaseRepository caseRepository, PersistenceService persistenceService) {
         this.caseRepository = caseRepository;
+        this.persistenceService = persistenceService;
+    }
+
+    @PostMapping("/save")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> saveCaseTeam() {
+        // Dummy placeholders, in practice you will deserialize from request body
+        // persistenceService.saveCaseWithTeam(new Case(), List.of());
+        return ResponseEntity.ok("Saved successfully");
     }
 
     @PostMapping

@@ -47,29 +47,13 @@ public class ElasticsearchTestExtension implements BeforeAllCallback, AfterEachC
         ElasticsearchOperations ops = appCtx.getBean(ElasticsearchOperations.class);
         for (Class<?> domainClass : domainClasses) {
             IndexOperations indexOps = ops.indexOps(domainClass);
-            if(indexOps.exists()) {
+            if (indexOps.exists()) {
                 indexOps.delete();
             }
             indexOps.create();
             indexOps.putMapping();
         }
     }
-
-    /*
-    @Override
-    public void afterAll(ExtensionContext context) {
-        this.
-        ApplicationContext appCtx = SpringExtension.getApplicationContext(context);
-        ElasticsearchOperations ops = appCtx.getBean(ElasticsearchOperations.class);
-
-        for (Class<?> entityClass : domainClasses) {
-            IndexOperations indexOps = ops.indexOps(entityClass);
-            indexOps.delete();
-            indexOps.create();
-            indexOps.putMapping();
-        }
-    }
-    */
 
     public static String getElasticsearchUri() {
         return container.getHttpHostAddress();

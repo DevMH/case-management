@@ -1,5 +1,6 @@
 package com.devmh.config;
 
+import com.devmh.model.ApprovalState;
 import com.devmh.model.Case;
 import com.devmh.model.LegacyCase;
 import com.devmh.persistence.CaseRepository;
@@ -35,6 +36,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.UUID;
 
 @Configuration
 @RequiredArgsConstructor
@@ -95,8 +97,13 @@ class MigrationBatchConfig {
 
     @Bean
     public ItemProcessor<LegacyCase, Case> itemProcessor() {
-        return mapper::toElasticsearchCase;
+        return legacy -> Case.builder()
+                .id(UUID.randomUUID())
+                .name(legacy.getName())
+                .state(ApprovalState.valueOf(legacy.getState()))
+                .build();
     }
+
 
     @Bean
     public RepositoryItemWriter<Case> itemWriter() {

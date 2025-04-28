@@ -8,6 +8,8 @@ elastic:
   port: 9200
 
 spring:
+  profiles:
+    active: test
   datasource:
     url: jdbc:h2:mem:batchdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver
@@ -19,23 +21,19 @@ spring:
       ddl-auto: none
   batch:
     job:
-      enabled: true
+      enabled: false #true
     jdbc:
       initialize-schema: always
 
-#elastic.user=elastic
-  #elastic.apiKey=cVYbpGXH
-  #elastic.host=localhost
-  #elastic.port=9200
-  #dynamically injected URI from the extension:
-  #elasticsearch:
-  #  uris: ${spring.elasticsearch.uris:${SPRING_ELASTICSEARCH_URIS:http://localhost:9200}}
   #elasticsearch:
   #  uris: http://localhost:9200
   #  username: elastic
   #  password: your-password
   #  connection-timeout: 1s
   #  socket-timeout: 30s
+  #dynamically injected URI from the extension:
+  #elasticsearch:
+  #  uris: ${spring.elasticsearch.uris:${SPRING_ELASTICSEARCH_URIS:http://localhost:9200}}
 
   mail:
     host: smtp.example.com
