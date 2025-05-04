@@ -10,10 +10,12 @@ import java.util.*;
 @Slf4j
 public class DeepDiff {
 
+    private final int maxDepth;
     private final Set<String> includedFields;
     private final Set<String> excludedFields;
 
-    public DeepDiff(Set<String> includedFields, Set<String> excludedFields) {
+    public DeepDiff(Set<String> includedFields, Set<String> excludedFields, int maxDepth) {
+        this.maxDepth = maxDepth;
         this.includedFields = includedFields != null ? includedFields : new HashSet<>();
         this.excludedFields = excludedFields != null ? excludedFields : new HashSet<>();
     }
@@ -23,8 +25,8 @@ public class DeepDiff {
         Map<String, Object> flatB = new LinkedHashMap<>();
         Set<Object> visitedA = Collections.newSetFromMap(new IdentityHashMap<>());
         Set<Object> visitedB = Collections.newSetFromMap(new IdentityHashMap<>());
-        flatten(a, "", flatA, visitedA);
-        flatten(b, "", flatB, visitedB);
+        flatten(a, "", flatA, visitedA, 0);
+        flatten(b, "", flatB, visitedB, 0);
 
         if (!includedFields.isEmpty()) {
             flatA.keySet().retainAll(includedFields);
@@ -36,11 +38,11 @@ public class DeepDiff {
         return Maps.difference(flatA, flatB);
     }
 
-    private void flatten(Object obj, String path, Map<String, Object> map, Set<Object> visited) {
-        if (obj == null || visited.contains(obj)) return;
+    private void flatten(Object obj, String path, Map<String, Object> map, Set<Object> visited, int depth) {
+        if (obj == null || visited.contains(obj) || depth > maxDepth) return;
         visited.add(obj);
 
-        if (obj instanceof String || obj instanceof Number || obj instanceof Boolean || obj.getClass().isPrimitive()) {
+        if (obj instanceof String || obj instanceof Number || obj instanceof Character || obj instanceof Boolean || obj.getClass().isPrimitive()) {
             map.put(path, obj);
             return;
         }
@@ -48,14 +50,14 @@ public class DeepDiff {
         if (obj instanceof Collection<?> col) {
             int i = 0;
             for (Object item : col) {
-                flatten(item, path + "[" + i++ + "]", map, visited);
+                flatten(item, path + "[" + i++ + "]", map, visited, depth + 1);
             }
             return;
         }
 
         if (obj instanceof Map<?, ?> rawMap) {
             for (Map.Entry<?, ?> entry : rawMap.entrySet()) {
-                flatten(entry.getValue(), path + "[" + entry.getKey() + "]", map, visited);
+                flatten(entry.getValue(), path + "[" + entry.getKey() + "]", map, visited, depth + 1);
             }
             return;
         }
@@ -64,9 +66,9 @@ public class DeepDiff {
             field.setAccessible(true);
             try {
                 Object val = field.get(obj);
-                flatten(val, path.isEmpty() ? field.getName() : path + "." + field.getName(), map, visited);
+                flatten(val, path.isEmpty() ? field.getName() : path + "." + field.getName(), map, visited, depth + 1);
             } catch (Exception e) {
-                log.warn("Failed to access field {}: {}", field.getName(), e.toString());
+                // log.warn("Failed to access field {}: {}", field.getName(), e.toString());
             }
         }
     }

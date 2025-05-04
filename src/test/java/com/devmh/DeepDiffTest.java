@@ -4,40 +4,110 @@ import com.devmh.util.DeepDiff;
 import com.devmh.util.DeepDiffUtil;
 import com.google.common.collect.MapDifference;
 import lombok.Data;
+import lombok.ToString;
+import lombok.experimental.Accessors;
 import org.instancio.Instancio;
+import org.instancio.settings.Keys;
+import org.instancio.settings.Settings;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class DeepDiffTest {
 
+    private final int maxDepth = 2;
+
+    Settings settings = Settings.create()
+            .set(Keys.MAX_DEPTH, 5)
+            .set(Keys.BEAN_VALIDATION_ENABLED, true)
+            .set(Keys.JPA_ENABLED, true)
+            .set(Keys.FAIL_ON_ERROR, true)
+            .set(Keys.SET_BACK_REFERENCES, true);
+
     @Data
-    static class Address {
-        String city;
-        String street;
+    static final class X {
+        //X peer;
+        Y y;
+        String s;
     }
 
     @Data
-    static class Person {
-        String name;
-        int age;
-        Address address;
-        List<String> nicknames;
+    static final class Y {
+        String string;
+        @ToString.Exclude
+        X peer;
+    }
+
+    sealed interface SealedBean permits MutableBean, ImmutableBean {
+        String string();
+        int i();
+        long l();
+        double d();
+        boolean b();
+        char c();
+        MutableBean peer();
+        SealedBean[] array();
+        Set<SealedBean> set();
+        SortedSet<SealedBean> sortedSet();
+        List<SealedBean> list();
+        Map<String, SealedBean> map();
+    }
+
+    record ImmutableBean(String string,
+            int i,
+            long l,
+            double d,
+            boolean b,
+            char c,
+            MutableBean peer,
+            SealedBean[] array,
+            Set<SealedBean> set,
+            SortedSet<SealedBean> sortedSet,
+            List<SealedBean> list,
+            Map<String, SealedBean> map) implements SealedBean {}
+
+    @Data
+    @Accessors(fluent = true)
+    static final class MutableBean implements SealedBean {
+        String string;
+        int i;
+        long l;
+        double d;
+        boolean b;
+        char c;
+        MutableBean peer;
+        MutableBean[] array;
+        Set<SealedBean> set;
+        SortedSet<SealedBean> sortedSet;
+        List<SealedBean> list;
+        Map<String, SealedBean> map;
     }
 
     @Test
-    void testDiff() {
-        Person p1 = Instancio.create(Person.class);
-        Person p2 = Instancio.create(Person.class);
-        p2.address = null;
+    //@Disabled
+    void testX() {
+        X b1 = Instancio.of(X.class).withSettings(settings).withMaxDepth(maxDepth).create();
+        DeepDiff diff = new DeepDiff(Set.of(), Set.of(), maxDepth);
+        MapDifference<String, Object> diffs = diff.diff(b1, b1);
+        diffs.entriesDiffering().forEach((k,v) ->
+                System.out.println(k + ":from " + v.leftValue() + " to " + v.rightValue()));
+        diffs.entriesOnlyOnLeft().forEach((k,v) ->
+                System.out.println(k + ":from " + v + " to null"));
+        diffs.entriesOnlyOnRight().forEach((k,v) ->
+                System.out.println(k + ":from null to " + v));
+        System.out.println(b1);
+    }
 
-        DeepDiff diff = new DeepDiff(Set.of(), Set.of());
-        MapDifference<String, Object> diffs = diff.diff(p1, p2);
+    @Test
+    @Disabled
+    void testNoDiff() {
+        MutableBean b1 = Instancio.of(MutableBean.class).withMaxDepth(maxDepth).create();
+        DeepDiff diff = new DeepDiff(Set.of(), Set.of(), maxDepth);
+        MapDifference<String, Object> diffs = diff.diff(b1, b1);
         diffs.entriesDiffering().forEach((k,v) ->
                 System.out.println(k + ":from " + v.leftValue() + " to " + v.rightValue()));
         diffs.entriesOnlyOnLeft().forEach((k,v) ->
@@ -46,22 +116,24 @@ public class DeepDiffTest {
                 System.out.println(k + ":from null to " + v));
     }
 
-    /*
     @Test
-    void testDiffWithControlledDifference() {
-        Person p1 = Instancio.create(Person.class);
-        Person p2 = Instancio.of(Person.class)
-                .set(Select.field(Person::getName), p1.name)
-                .set(Select.field(Person::getAddress::getCity), "ChangedCity")
-                .create();
-
-        DeepDiffUtil util = new DeepDiffUtil(Set.of(), Set.of());
-        DeepDiffUtil.DifferenceSummary summary = util.summarizeDifferences(p1, p2);
-
-        summary.printSummary();
-        assertTrue(summary.both.stream().anyMatch(d -> d.path.equals("address.city")));
+    @Disabled
+    void testAllDiff() {
+        MutableBean b1 = Instancio.of(MutableBean.class).withSeed(0).create();//.withMaxDepth(maxDepth).create();
+        MutableBean b2 = Instancio.of(MutableBean.class).withSeed(1).withMaxDepth(maxDepth).create();
+        DeepDiff diff = new DeepDiff(Set.of(), Set.of(), maxDepth);
+        MapDifference<String, Object> diffs = diff.diff(b1, b2);
+        diffs.entriesDiffering().forEach((k,v) ->
+                System.out.println(k + ":from " + v.leftValue() + " to " + v.rightValue()));
+        diffs.entriesOnlyOnLeft().forEach((k,v) ->
+                System.out.println(k + ":from " + v + " to null"));
+        diffs.entriesOnlyOnRight().forEach((k,v) ->
+                System.out.println(k + ":from null to " + v));
+        //System.out.println(b1.array[0]);
+        //System.out.println(b2.array[0]);
+        System.out.println(b1);
+        System.out.println(b2);
     }
-    */
 
     /*
     @Test
