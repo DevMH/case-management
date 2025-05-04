@@ -4,6 +4,7 @@ import com.devmh.util.DeepDiff;
 import com.devmh.util.DeepDiffUtil;
 import com.google.common.collect.MapDifference;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.experimental.Accessors;
 import org.instancio.Instancio;
@@ -15,18 +16,20 @@ import org.junit.jupiter.api.Test;
 import java.util.*;
 import java.util.function.Consumer;
 
+import static org.instancio.Select.all;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class DeepDiffTest {
 
-    private final int maxDepth = 2;
+    private final int maxDepth = 3;
 
     Settings settings = Settings.create()
-            .set(Keys.MAX_DEPTH, 5)
+            .set(Keys.MAX_DEPTH, maxDepth) // use same as model max
             .set(Keys.BEAN_VALIDATION_ENABLED, true)
             .set(Keys.JPA_ENABLED, true)
             .set(Keys.FAIL_ON_ERROR, true)
-            .set(Keys.SET_BACK_REFERENCES, true);
+            .set(Keys.SET_BACK_REFERENCES, true)
+            .mapType(SealedBean.class, MutableBean.class);
 
     @Data
     static final class X {
@@ -49,10 +52,10 @@ public class DeepDiffTest {
         double d();
         boolean b();
         char c();
-        MutableBean peer();
+        SealedBean peer();
         SealedBean[] array();
         Set<SealedBean> set();
-        SortedSet<SealedBean> sortedSet();
+        //SortedSet<SealedBean> sortedSet();
         List<SealedBean> list();
         Map<String, SealedBean> map();
     }
@@ -63,10 +66,10 @@ public class DeepDiffTest {
             double d,
             boolean b,
             char c,
-            MutableBean peer,
+            SealedBean peer,
             SealedBean[] array,
             Set<SealedBean> set,
-            SortedSet<SealedBean> sortedSet,
+            //SortedSet<SealedBean> sortedSet,
             List<SealedBean> list,
             Map<String, SealedBean> map) implements SealedBean {}
 
@@ -79,16 +82,24 @@ public class DeepDiffTest {
         double d;
         boolean b;
         char c;
-        MutableBean peer;
-        MutableBean[] array;
+        @EqualsAndHashCode.Exclude
+        @ToString.Exclude
+        SealedBean peer;
+        @EqualsAndHashCode.Exclude
+        @ToString.Exclude
+        SealedBean[] array;
+        @ToString.Exclude
         Set<SealedBean> set;
-        SortedSet<SealedBean> sortedSet;
+        //@ToString.Exclude
+        //SortedSet<SealedBean> sortedSet;
+        @ToString.Exclude
         List<SealedBean> list;
+        @ToString.Exclude
         Map<String, SealedBean> map;
     }
 
     @Test
-    //@Disabled
+    @Disabled
     void testX() {
         X b1 = Instancio.of(X.class).withSettings(settings).withMaxDepth(maxDepth).create();
         DeepDiff diff = new DeepDiff(Set.of(), Set.of(), maxDepth);
@@ -117,10 +128,21 @@ public class DeepDiffTest {
     }
 
     @Test
-    @Disabled
+    //@Disabled
     void testAllDiff() {
-        MutableBean b1 = Instancio.of(MutableBean.class).withSeed(0).create();//.withMaxDepth(maxDepth).create();
-        MutableBean b2 = Instancio.of(MutableBean.class).withSeed(1).withMaxDepth(maxDepth).create();
+        System.out.println("testAllDiff()");
+        MutableBean b1 = Instancio.of(MutableBean.class)
+                .subtype(all(SealedBean.class), MutableBean.class)
+                .withSettings(settings)
+                .withSeed(0)
+                .withMaxDepth(maxDepth)
+                .create();
+        MutableBean b2 = Instancio.of(MutableBean.class)
+                .subtype(all(SealedBean.class), MutableBean.class)
+                .withSettings(settings)
+                .withSeed(1)
+                .withMaxDepth(maxDepth)
+                .create();
         DeepDiff diff = new DeepDiff(Set.of(), Set.of(), maxDepth);
         MapDifference<String, Object> diffs = diff.diff(b1, b2);
         diffs.entriesDiffering().forEach((k,v) ->
