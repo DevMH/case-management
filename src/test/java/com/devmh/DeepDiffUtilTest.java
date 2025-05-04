@@ -1,20 +1,16 @@
 package com.devmh;
 
-import com.devmh.util.DeepDiff;
 import com.devmh.util.DeepDiffUtil;
-import com.google.common.collect.MapDifference;
 import lombok.Data;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class DeepDiffTest {
+public class DeepDiffUtilTest {
 
     @Data
     static class Address {
@@ -31,19 +27,17 @@ public class DeepDiffTest {
     }
 
     @Test
-    void testDiff() {
+    void testDiffWithLoggingAndSkippedPaths() {
         Person p1 = Instancio.create(Person.class);
         Person p2 = Instancio.create(Person.class);
         p2.address = null;
 
-        DeepDiff diff = new DeepDiff(Set.of(), Set.of());
-        MapDifference<String, Object> diffs = diff.diff(p1, p2);
-        diffs.entriesDiffering().forEach((k,v) ->
-                System.out.println(k + ":from " + v.leftValue() + " to " + v.rightValue()));
-        diffs.entriesOnlyOnLeft().forEach((k,v) ->
-                System.out.println(k + ":from " + v + " to null"));
-        diffs.entriesOnlyOnRight().forEach((k,v) ->
-                System.out.println(k + ":from null to " + v));
+        DeepDiffUtil util = new DeepDiffUtil(Set.of(), Set.of());
+        List<DeepDiffUtil.Difference> diffs = util.diff(p1, p2);
+        diffs.forEach(System.out::println);
+        util.getSkippedPaths().forEach(System.out::println);
+        assertFalse(diffs.isEmpty());
+        assertFalse(util.getSkippedPaths().isEmpty());
     }
 
     /*
@@ -63,7 +57,6 @@ public class DeepDiffTest {
     }
     */
 
-    /*
     @Test
     void testMalformedFieldPathsAndNulls() {
         runRobustnessChecks(
@@ -109,7 +102,6 @@ public class DeepDiffTest {
             fail("DeepDiffUtil should not throw even on malformed or null paths. Threw: " + e);
         }
     }
-     */
 
     /*
     @Test
