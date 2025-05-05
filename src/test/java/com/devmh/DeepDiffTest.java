@@ -1,5 +1,6 @@
 package com.devmh;
 
+import com.devmh.model.Case;
 import com.devmh.util.DeepDiff;
 import com.devmh.util.DeepDiffUtil;
 import com.google.common.collect.MapDifference;
@@ -21,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class DeepDiffTest {
 
-    private final int maxDepth = 3;
+    private final int maxDepth = 10;
 
     Settings settings = Settings.create()
             .set(Keys.MAX_DEPTH, maxDepth) // use same as model max
@@ -99,7 +100,7 @@ public class DeepDiffTest {
     }
 
     @Test
-    @Disabled
+    //@Disabled
     void testX() {
         X b1 = Instancio.of(X.class).withSettings(settings).withMaxDepth(maxDepth).create();
         DeepDiff diff = new DeepDiff(Set.of(), Set.of(), maxDepth);
@@ -114,8 +115,35 @@ public class DeepDiffTest {
     }
 
     @Test
+    //@Disabled
+    void testAllDiff() {
+        Case c1 = Instancio.of(Case.class)
+                .withSettings(settings)
+                .withSeed(0)
+                .withMaxDepth(maxDepth)
+                .create();
+        Case c2 = Instancio.of(Case.class)
+                .withSettings(settings)
+                .withSeed(1)
+                .withMaxDepth(maxDepth)
+                .create();
+        DeepDiff diff = new DeepDiff(Set.of(), Set.of(), maxDepth);
+        MapDifference<String, Object> diffs = diff.diff(c1, c2);
+        diffs.entriesDiffering().forEach((k,v) ->
+                System.out.println(k + ":from " + v.leftValue() + " to " + v.rightValue()));
+        diffs.entriesOnlyOnLeft().forEach((k,v) ->
+                System.out.println(k + ":from " + v + " to null"));
+        diffs.entriesOnlyOnRight().forEach((k,v) ->
+                System.out.println(k + ":from null to " + v));
+        diffs.entriesInCommon().forEach((k,v) ->
+                System.out.println(k + ":share value " + v));
+        System.out.println(c1);
+        System.out.println(c2);
+    }
+
+    @Test
     @Disabled
-    void testNoDiff() {
+    void testXNoDiff() {
         MutableBean b1 = Instancio.of(MutableBean.class).withMaxDepth(maxDepth).create();
         DeepDiff diff = new DeepDiff(Set.of(), Set.of(), maxDepth);
         MapDifference<String, Object> diffs = diff.diff(b1, b1);
@@ -128,9 +156,8 @@ public class DeepDiffTest {
     }
 
     @Test
-    //@Disabled
-    void testAllDiff() {
-        System.out.println("testAllDiff()");
+    @Disabled
+    void testXAllDiff() {
         MutableBean b1 = Instancio.of(MutableBean.class)
                 .subtype(all(SealedBean.class), MutableBean.class)
                 .withSettings(settings)
