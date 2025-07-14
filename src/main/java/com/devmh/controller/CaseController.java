@@ -6,15 +6,18 @@ import com.devmh.model.Docket;
 import com.devmh.model.Location;
 import com.devmh.persistence.CaseRepository;
 import com.devmh.service.PersistenceService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.github.fge.jsonpatch.JsonPatch;
+import com.github.fge.jsonpatch.mergepatch.JsonMergePatch;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 @RestController
 @RequestMapping("/cases")
@@ -65,6 +68,28 @@ public class CaseController {
             caseRepository.save(newCase);
         }
         return Instant.now().getNano() - start.getNano();
+    }
+
+    @PatchMapping(path = "/{id}", consumes = "application/json-patch+json")
+    public ResponseEntity<Case> patchCase(@PathVariable UUID id, @RequestBody JsonPatch patch) {
+        Case existing = caseRepository.findById(id).orElseThrow();
+        Case patched = PatchUtils.applyPatch(patch, existing, Case.class);
+        if (patched.getFindings() != null) {
+            patched.setFindings(new ArrayList<>(new HashSet<>(patched.getFindings())));
+        }
+        return ResponseEntity.ok(caseRepository.save(patched));
+    }
+
+    @PatchMapping(path = "/{id}", consumes = "application/merge-patch+json")
+    public ResponseEntity<Case> mergePatchCase(@PathVariable UUID id, @RequestBody JsonNode patchNode) {
+        try {
+            JsonMergePatch mergePatch = JsonMergePatch.fromJson(patchNode);
+            Case existing = caseRepository.findById(id).orElseThrow();
+            Case patched = PatchUtils.applyMergePatch(mergePatch, existing, Case.class);
+            return ResponseEntity.ok(caseRepository.save(patched));
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Merge Patch", e);
+        }
     }
 
     private Case generateCase() {

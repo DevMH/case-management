@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.elasticsearch.annotations.Document;
 import java.util.List;
 import java.util.UUID;
@@ -17,6 +18,8 @@ import java.util.UUID;
 public class Case {
     @Id
     private UUID id;
+    @Version
+    private Long version;
     private String name;
     private Docket docket;
     private ApprovalState state;
