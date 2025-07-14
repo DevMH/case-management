@@ -1,9 +1,6 @@
 package com.devmh.controller;
 
-import com.devmh.model.ApprovalState;
-import com.devmh.model.Case;
-import com.devmh.model.Docket;
-import com.devmh.model.Location;
+import com.devmh.model.*;
 import com.devmh.persistence.CaseRepository;
 import com.devmh.service.PersistenceService;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -86,6 +83,14 @@ public class CaseController {
             JsonMergePatch mergePatch = JsonMergePatch.fromJson(patchNode);
             Case existing = caseRepository.findById(id).orElseThrow();
             Case patched = PatchUtils.applyMergePatch(mergePatch, existing, Case.class);
+            List<String> changes = PatchUtils.diffCases(existing, patched);
+            changes.forEach(System.out::println);
+            changeLogRepository.save(CaseChangeLog.builder()
+                    .id(UUID.randomUUID())
+                    .caseId(existing.getId())
+                    .changes(changes)
+                    .timestamp(Instant.now())
+                    .build());
             return ResponseEntity.ok(caseRepository.save(patched));
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Merge Patch", e);
