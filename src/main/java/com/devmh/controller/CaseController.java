@@ -1,11 +1,14 @@
 package com.devmh.controller;
 
 import com.devmh.model.*;
+import com.devmh.persistence.CaseChangeLogRepository;
 import com.devmh.persistence.CaseRepository;
+import com.devmh.service.LockService;
 import com.devmh.service.PersistenceService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.fge.jsonpatch.JsonPatch;
 import com.github.fge.jsonpatch.mergepatch.JsonMergePatch;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,24 +16,23 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 
 @RestController
 @RequestMapping("/cases")
+@RequiredArgsConstructor
 public class CaseController {
 
     private final CaseRepository caseRepository;
+    private final CaseChangeLogRepository caseChangeLogRepository;
     private final PersistenceService persistenceService;
+    private final LockService lockService;
 
     private final Random rand  = new Random();
     {
         rand.setSeed(System.currentTimeMillis());
-    }
-
-    public CaseController(CaseRepository caseRepository, PersistenceService persistenceService) {
-        this.caseRepository = caseRepository;
-        this.persistenceService = persistenceService;
     }
 
     @PostMapping("/save")
@@ -69,12 +71,37 @@ public class CaseController {
 
     @PatchMapping(path = "/{id}", consumes = "application/json-patch+json")
     public ResponseEntity<Case> patchCase(@PathVariable UUID id, @RequestBody JsonPatch patch) {
-        Case existing = caseRepository.findById(id).orElseThrow();
-        Case patched = PatchUtils.applyPatch(patch, existing, Case.class);
-        if (patched.getFindings() != null) {
-            patched.setFindings(new ArrayList<>(new HashSet<>(patched.getFindings())));
+        String lockKey = "lock:case:" + id;
+        if (!lockService.acquireLock(lockKey, Duration.ofSeconds(10))) {
+            String owner = lockService.getLockOwner(lockKey);
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Case is currently locked by another operation" + (owner != null ? " (" + owner + ")" : "")
+            );
         }
-        return ResponseEntity.ok(caseRepository.save(patched));
+        try {
+            Case existing = caseRepository.findById(id).orElseThrow();
+            Case patched = PatchUtils.applyPatch(patch, existing, Case.class);
+
+            if (!Objects.equals(existing.getVersion(), patched.getVersion())) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Version mismatch detected");
+            }
+
+            List<String> changes = PatchUtils.diffCases(existing, patched);
+            caseChangeLogRepository.save(CaseChangeLog.builder()
+                    .id(UUID.randomUUID())
+                    .caseId(existing.getId())
+                    .changes(changes)
+                    .timestamp(Instant.now())
+                    .build());
+
+            if (patched.getFindings() != null) {
+                patched.setFindings(new ArrayList<>(new HashSet<>(patched.getFindings())));
+            }
+            return ResponseEntity.ok(caseRepository.save(patched));
+        } finally {
+            lockService.releaseLock(lockKey);
+        }
     }
 
     @PatchMapping(path = "/{id}", consumes = "application/merge-patch+json")
@@ -85,7 +112,7 @@ public class CaseController {
             Case patched = PatchUtils.applyMergePatch(mergePatch, existing, Case.class);
             List<String> changes = PatchUtils.diffCases(existing, patched);
             changes.forEach(System.out::println);
-            changeLogRepository.save(CaseChangeLog.builder()
+            caseChangeLogRepository.save(CaseChangeLog.builder()
                     .id(UUID.randomUUID())
                     .caseId(existing.getId())
                     .changes(changes)
