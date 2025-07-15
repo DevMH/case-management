@@ -17,9 +17,10 @@ public class LockService {
     private final StringRedisTemplate redisTemplate;
 
     public boolean acquireLock(String key, Duration ttl) {
+        String currentUser = getCurrentUsername();
         ValueOperations<String, String> ops = redisTemplate.opsForValue();
-        String lockValue = UUID.randomUUID().toString();
-        Boolean success = ops.setIfAbsent(key, lockValue, ttl);
+        String value = "locked-by:" + currentUser;
+        Boolean success = ops.setIfAbsent(key, value, ttl);
         return Boolean.TRUE.equals(success);
     }
 
