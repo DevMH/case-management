@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.github.fge.jsonpatch.JsonPatch;
 import com.github.fge.jsonpatch.mergepatch.JsonMergePatch;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,7 @@ public class CaseController {
     private final CaseChangeLogRepository caseChangeLogRepository;
     private final PersistenceService persistenceService;
     private final LockService lockService;
+    private final ApplicationEventPublisher eventPublisher;
 
     private final Random rand  = new Random();
     {
