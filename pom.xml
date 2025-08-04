@@ -133,6 +133,10 @@
             <artifactId>guava</artifactId>
             <version>32.1.3-jre</version> <!-- or latest stable -->
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
