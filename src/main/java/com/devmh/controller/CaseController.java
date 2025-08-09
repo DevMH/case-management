@@ -40,7 +40,6 @@ public class CaseController {
     @PostMapping("/save")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> saveCaseTeam() {
-        // Dummy placeholders, in practice you will deserialize from request body
         // persistenceService.saveCaseWithTeam(new Case(), List.of());
         return ResponseEntity.ok("Saved successfully");
     }
