@@ -5,6 +5,7 @@ import com.devmh.persistence.CaseChangeLogRepository;
 import com.devmh.persistence.CaseRepository;
 import com.devmh.service.LockService;
 import com.devmh.service.PersistenceService;
+import com.devmh.util.PatchUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.fge.jsonpatch.JsonPatch;
 import com.github.fge.jsonpatch.mergepatch.JsonMergePatch;

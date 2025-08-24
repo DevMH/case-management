@@ -1,10 +1,9 @@
-package com.devmh.controller;
+package com.devmh.util;
 
 import com.devmh.model.Case;
 import com.devmh.model.Finding;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.fge.jsonpatch.JsonPatch;
 import com.github.fge.jsonpatch.JsonPatchException;
 import com.github.fge.jsonpatch.mergepatch.JsonMergePatch;
@@ -14,7 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
 
-class PatchUtils {
+public class PatchUtils {
     private static final ObjectMapper mapper = new ObjectMapper();
 
     public static <T> T applyPatch(JsonPatch patch, T targetBean, Class<T> beanClass) {
