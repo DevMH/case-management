@@ -12,26 +12,17 @@ public class PatchFormatter {
 
     public enum Op { add, remove, replace, move, copy }
 
-    public static final class FieldDescriptor {
-        public final String label;
-        public final boolean isCollection;
-        public final String possessive;
-
-        public FieldDescriptor(String label, boolean isCollection, String possessive) {
-            this.label = label;
-            this.isCollection = isCollection;
-            this.possessive = possessive;
-        }
-        public static FieldDescriptor scalar(String label) { return new FieldDescriptor(label, false, null); }
-        public static FieldDescriptor collection(String label) { return new FieldDescriptor(label, true, null); }
-    }
-
     private final ObjectMapper mapper;
     private final Map<String, FieldDescriptor> dictionary;
 
-    public PatchFormatter(ObjectMapper mapper, Map<String, FieldDescriptor> dictionary) {
+    public <T extends FieldDescriptorProvider> PatchFormatter(ObjectMapper mapper, Map<String, FieldDescriptor> dictionary) {
         this.mapper = mapper;
         this.dictionary = dictionary;
+    }
+
+    public <T extends FieldDescriptorProvider> PatchFormatter(ObjectMapper mapper, T descriptorProvider) {
+        this.mapper = mapper;
+        this.dictionary = descriptorProvider.getFieldDescriptors();
     }
 
     public List<String> format(String jsonPatchArray) {
@@ -204,22 +195,5 @@ public class PatchFormatter {
 
     private static String text(JsonNode n, String field) {
         return n.has(field) ? n.get(field).asText() : null;
-    }
-
-    public static Map<String, FieldDescriptor> defaultDictionary() {
-        Map<String, FieldDescriptor> m = new HashMap<>();
-        m.put("case", new FieldDescriptor("case", false, "case's"));
-        m.put("case/team", new FieldDescriptor("case team", false, "case team's"));
-        m.put("case/findings", FieldDescriptor.collection("findings"));
-        m.put("case/team/teamMember[]", FieldDescriptor.collection("team members"));
-        m.put("case/name", FieldDescriptor.scalar("name"));
-        m.put("case/state", FieldDescriptor.scalar("approval state"));
-        m.put("case/docket/name", FieldDescriptor.scalar("docket name"));
-        m.put("case/team/teamMember[]/firstName", FieldDescriptor.scalar("first name"));
-        m.put("case/team/teamMember[]/lastName", FieldDescriptor.scalar("last name"));
-        m.put("case/findings[]/startDate", FieldDescriptor.scalar("finding start date"));
-        m.put("case/findings[]/endDate", FieldDescriptor.scalar("finding end date"));
-        m.put("case/findings[]/sensitive", FieldDescriptor.scalar("finding sensitivity"));
-        return m;
     }
 }

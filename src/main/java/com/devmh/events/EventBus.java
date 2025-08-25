@@ -3,20 +3,16 @@ package com.devmh.events;
 import com.devmh.events.kafka.KafkaEventPublisher;
 import com.devmh.events.websocket.WebSocketNotifier;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class CaseChangeEventListener {
+public class EventBus {
 
-    @Autowired
-    private KafkaEventPublisher kafkaPublisher;
-
-    @Autowired
-    private WebSocketNotifier notifier;
+    private final KafkaEventPublisher kafkaPublisher;
+    private final WebSocketNotifier notifier;
 
     @Async
     @EventListener

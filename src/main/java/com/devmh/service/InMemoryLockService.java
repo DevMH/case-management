@@ -72,7 +72,7 @@ public class InMemoryLockService {
         }
 
         if (acquired) {
-            eventPublisher.publishEvent(new CaseLockedEvent(caseId, userId, now, expiry));
+            eventPublisher.publishEvent(new CaseLockedEvent(this, caseId.toString(), userId, now, expiry));
             log.info("Lock acquired for case {} by user {}", caseId, userId);
         }
 
