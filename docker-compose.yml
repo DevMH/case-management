@@ -1,0 +1,140 @@
+version: "3.9"
+
+name: case-management-stack
+
+services:
+  elastic:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.14.3
+    container_name: elastic
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsSL http://localhost:9200 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    networks:
+      - cmnet
+
+  neo4j:
+    image: neo4j:5.20.0-community
+    container_name: neo4j
+    environment:
+      - NEO4J_AUTH=neo4j/password
+      - NEO4J_dbms_security_auth__enabled=true
+      - NEO4J_server_memory_heap_max__size=512m
+      - NEO4J_server_memory_heap_initial__size=512m
+    ports:
+      - "7474:7474"   # HTTP
+      - "7687:7687"   # Bolt
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p password 'RETURN 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - neo4j-data:/data
+      - neo4j-logs:/logs
+    networks:
+      - cmnet
+
+  kafka:
+    image: bitnami/kafka:3.7
+    container_name: kafka
+    environment:
+      # KRaft (no ZooKeeper)
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_CFG_NUM_PARTITIONS=3
+      - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=1
+      - BITNAMI_DEBUG=true
+    ports:
+      - "9092:9092"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/9092'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks:
+      - cmnet
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: case-management-app
+    depends_on:
+      elastic:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      # Spring profile
+      - SPRING_PROFILES_ACTIVE=docker
+
+      # Elasticsearch (security disabled in this compose)
+      - SPRING_ELASTICSEARCH_URIS=http://elastic:9200
+
+      # Neo4j
+      - SPRING_DATA_NEO4J_URI=bolt://neo4j:7687
+      - SPRING_DATA_NEO4J_USERNAME=neo4j
+      - SPRING_DATA_NEO4J_PASSWORD=password
+
+      # Kafka
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_KAFKA_PRODUCER_KEY_SERIALIZER=org.apache.kafka.common.serialization.StringSerializer
+      - SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER=org.springframework.kafka.support.serializer.JsonSerializer
+      - SPRING_KAFKA_CONSUMER_KEY_DESERIALIZER=org.apache.kafka.common.serialization.StringDeserializer
+      - SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER=org.springframework.kafka.support.serializer.JsonDeserializer
+      - SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_TRUSTED_PACKAGES=*
+
+      # WS + Kafka app settings used earlier in our code
+      - APP_INSTANCE_ID=${HOSTNAME}
+      - APP_KAFKA_WS_GROUP_ID=case-management-${HOSTNAME}
+      - APP_TOPICS_CASE_CREATED=case.created
+      - APP_TOPICS_CASE_UPDATED=case.updated
+      - APP_TOPICS_CASE_LOCKED=case.locked
+      - APP_TOPICS_CASE_UNLOCKED=case.unlocked
+      - WEBSOCKET_BASE_DESTINATION=/topic/case
+
+      # Spring Batch metadata DB (H2 in-memory)
+      - SPRING_DATASOURCE_URL=jdbc:h2:mem:batchdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.H2Dialect
+      - SPRING_BATCH_JDBC_INITIALIZE_SCHEMA=always
+
+      # Logging (optional)
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK=INFO
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_BATCH=INFO
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_KAFKA=INFO
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_DATA_ELASTICSEARCH=INFO
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_DATA_NEO4J=INFO
+    ports:
+      - "8080:8080"
+    networks:
+      - cmnet
+
+networks:
+  cmnet:
+
+volumes:
+  es-data:
+  neo4j-data:
+  neo4j-logs:

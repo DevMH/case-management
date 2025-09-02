@@ -2,3 +2,4 @@
 /target/
 /.gradle/4.4.1/fileHashes/fileHashes.lock
 /migration-errors.log
+/.gradle/
