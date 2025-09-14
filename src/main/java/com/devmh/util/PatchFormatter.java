@@ -193,7 +193,7 @@ public class PatchFormatter {
         ).collect(Collectors.joining("/"));
     }
 
-    private static String text(JsonNode n, String field) {
+    public static String text(JsonNode n, String field) {
         return n.has(field) ? n.get(field).asText() : null;
     }
 }
