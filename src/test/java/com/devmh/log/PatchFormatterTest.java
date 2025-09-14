@@ -1,5 +1,6 @@
 package com.devmh.log;
 
+import com.devmh.log.model.PatchFormatter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 

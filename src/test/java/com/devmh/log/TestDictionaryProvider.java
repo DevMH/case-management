@@ -1,5 +1,8 @@
 package com.devmh.log;
 
+import com.devmh.log.model.FieldDescriptor;
+import com.devmh.log.model.FieldDescriptorProvider;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 

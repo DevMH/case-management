@@ -1,4 +1,4 @@
-package com.devmh.log;
+package com.devmh.log.model;
 
 import java.util.Map;
 
