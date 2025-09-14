@@ -5,6 +5,7 @@ import co.elastic.clients.elasticsearch.core.GetRequest;
 import co.elastic.clients.elasticsearch.core.GetResponse;
 import com.devmh.log.model.FieldDescriptor;
 import com.devmh.log.model.FieldDescriptorProvider;
+import com.devmh.log.model.FieldMapping;
 
 import java.io.IOException;
 import java.util.Map;
@@ -26,8 +27,8 @@ public class ElasticFieldDescriptorProvider implements FieldDescriptorProvider {
     public Map<String, FieldDescriptor> getFieldDescriptors() {
         try {
             String id = mappingKey + ":" + version;
-            GetResponse<FieldMappingVersion> resp =
-                    es.get(GetRequest.of(b -> b.index(index).id(id)), FieldMappingVersion.class);
+            GetResponse<FieldMapping> resp =
+                    es.get(GetRequest.of(b -> b.index(index).id(id)), FieldMapping.class);
             if (!resp.found()) {
                 throw new IllegalStateException("Mapping not found: " + id);
             }
